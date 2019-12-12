@@ -259,13 +259,6 @@ class ModelBuilder:
         if any((self.optimizer is None, self.compile_opt is None)):
             raise ValueError("Can not compile, need optimizer name and losses")
 
-        if self.optimizer == 'adam':
-            optimizer = get_adam(**self.optimizer_args)
-        elif self.optimizer == 'sgd':
-            optimizer = get_sgd(**self.optimizer_args)
-        else:
-            raise NameError('Unknown optimizer name ({})'.format(self.optimizer))
-
         loss_functions, loss_weights, loss_metrics = {}, {}, {}
         for layer_name, layer_info in self.compile_opt.items():
             # Replace the str function name with actual function if it is custom
@@ -293,6 +286,7 @@ class ModelBuilder:
 
             loss_metrics[layer_name] = metrics
 
+        optimizer = self._get_optimizer()
         model.compile(loss=loss_functions, optimizer=optimizer,
                       metrics=loss_metrics, loss_weights=loss_weights)
         return model
@@ -311,6 +305,17 @@ class ModelBuilder:
             lines.append(key + ': ' + str(self.compile_opt[key]))
         lines.append('\n')
         orga.io.print_log(lines)
+
+    def _get_optimizer(self):
+        if self.optimizer == 'adam':
+            optimizer = get_adam(**self.optimizer_args)
+        elif self.optimizer == 'sgd':
+            optimizer = get_sgd(**self.optimizer_args)
+        elif self.optimizer.startswith("keras:"):
+            optimizer = getattr(ks.optimizers, self.optimizer.split("keras:")[-1])(**self.optimizer_args)
+        else:
+            raise NameError('Unknown optimizer name ({})'.format(self.optimizer))
+        return optimizer
 
 
 def get_adam(beta_1=0.9, beta_2=0.999, epsilon=0.1, decay=0.0, **kwargs):

@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy as np
 import os
 from unittest import TestCase
-from unittest.mock import MagicMock
-from keras.models import Model
-import keras.layers as layers
+from unittest.mock import MagicMock, patch
 
 from orcanet.core import Organizer
 from orcanet.model_builder import ModelBuilder
@@ -43,6 +40,31 @@ class TestModel(TestCase):
         self.assertEqual(model.output_shape[1:], (2, ))
         self.assertEqual(len(model.layers), 14)
         self.assertEqual(model.optimizer.epsilon, 0.2)
+
+    @patch('orcanet.model_builder.toml.load')
+    def test_load_optimizer(self, mock_toml_load):
+        def toml_load(file):
+            return file
+        mock_toml_load.side_effect = toml_load
+
+        file_cntn = {
+            "model": {"blocks": None},
+            "compile": {"optimizer": "keras:Adam", "losses": None, "lr": 1.0}
+        }
+        builder = ModelBuilder(file_cntn)
+        opti = builder._get_optimizer()
+
+        target = {
+            'lr': 1.0,
+            'beta_1': 0.8999999761581421,
+            'beta_2': 0.9990000128746033,
+            'decay': 0.0,
+            'epsilon': 1e-07,
+            'amsgrad': False
+        }
+
+        for k, v in opti.get_config().items():
+            self.assertAlmostEqual(v, target[k])
 
     # def test_merge_models(self):
     #     def build_model(inp_layer_name, inp_shape):
