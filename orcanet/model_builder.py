@@ -48,7 +48,7 @@ class ModelBuilder:
         Compile a model with the optimizer settings given in the model_file.
 
     """
-    def __init__(self, model_file):
+    def __init__(self, model_file, **custom_blocks):
         """
         Read out parameters for creating models with OrcaNet from a toml file.
 
@@ -56,9 +56,13 @@ class ModelBuilder:
         ----------
         model_file : str
             Path to the model toml file.
+        custom_blocks
+            For building models with custom blocks in the toml:
+            Custom block names as kwargs ('toml name'='block').
 
         """
         file_content = toml.load(model_file)
+        self.custom_blocks = custom_blocks
 
         try:
             if "model" in file_content:
@@ -171,7 +175,8 @@ class ModelBuilder:
             raise ValueError("Invalid input_shape"
                              "Has length {}, but must be 1\n input_shapes "
                              "= {}".format(len(input_shapes), input_shapes))
-        builder = BlockBuilder(self.defaults, verbose=verbose)
+        builder = BlockBuilder(
+            self.defaults, verbose=verbose, **self.custom_blocks)
         model = builder.build(input_shapes, self.configs)
 
         if compile_model:
