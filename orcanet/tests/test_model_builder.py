@@ -4,6 +4,7 @@
 import os
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+import keras.layers as layers
 
 from orcanet.core import Organizer
 from orcanet.model_builder import ModelBuilder
@@ -65,6 +66,21 @@ class TestModel(TestCase):
 
         for k, v in opti.get_config().items():
             self.assertAlmostEqual(v, target[k])
+
+    @patch('orcanet.model_builder.toml.load')
+    def test_custom_blocks(self, mock_toml_load):
+        def toml_load(file):
+            return file
+        mock_toml_load.side_effect = toml_load
+
+        file_cntn = {
+            "model": {"blocks": [{"type": "my_custom_block", "units": 10}, ]},
+        }
+        builder = ModelBuilder(file_cntn, my_custom_block=layers.Dense)
+        model = builder.build_with_input({"a": (10, 1)}, compile_model=False)
+
+        self.assertIsInstance(model.layers[-1], layers.Dense)
+        self.assertEqual(model.layers[-1].get_config()["units"], 10)
 
     # def test_merge_models(self):
     #     def build_model(inp_layer_name, inp_shape):
