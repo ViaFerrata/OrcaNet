@@ -1,3 +1,6 @@
+This repository has moved. Please refer to https://github.com/KM3NeT/OrcaNet for an up-to-date version.
+
+
 OrcaNet: A training organizer for Deep Learning in KM3NeT
 =========================================================
 
